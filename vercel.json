@@ -2,11 +2,12 @@
   "installCommand": "npm install --force",
   "functions": {
     "api/[...path].ts": {
-      "includeFiles": "{data/**,uploads/**,src/db/**}"
+      "includeFiles": "{data/**,uploads/**,src/**}"
     }
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/[...path]" },
-    { "source": "/uploads/(.*)", "destination": "/api/[...path]" }
+    { "source": "/uploads/(.*)", "destination": "/api/[...path]" },
+    { "source": "/src/assets/(.*)", "destination": "/api/[...path]" }
   ]
 }

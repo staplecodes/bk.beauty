@@ -256,13 +256,89 @@ class PersistentStorage {
     }
   }
 
-  private save(): void {
-    if (!this.db) return;
-    const tempFile = `${DB_FILE}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(this.db, null, 2), 'utf-8');
-    fs.renameSync(tempFile, DB_FILE);
+const TMP_DB_FILE = '/tmp/bkbeauty_db.json';
+
+class PersistentStorage {
+  private db: DatabaseSchema | null = null;
+
+  constructor() {
+    this.ensureInitialized();
   }
 
+  private ensureInitialized(): void {
+    if (this.db) return;
+
+    const initialData: DatabaseSchema = {
+      adminUsers: [
+        {
+          id: 'admin_1',
+          email: 'admin@bkbeauty.dz',
+          name: 'BK Beauty Admin',
+          role: 'admin',
+        },
+      ],
+      adminPasswordHash: bcrypt.hashSync('admin12345678', 10),
+      adminSessions: [],
+      categories: INITIAL_CATEGORIES,
+      products: INITIAL_PRODUCTS,
+      orders: [],
+      wilayas: INITIAL_WILAYAS,
+      settings: INITIAL_SETTINGS,
+      version: 1,
+    };
+
+    try {
+      // 1. Check if /tmp copy exists first (for Vercel runtime edits)
+      if (process.env.VERCEL && fs.existsSync(TMP_DB_FILE)) {
+        const content = fs.readFileSync(TMP_DB_FILE, 'utf-8');
+        this.db = JSON.parse(content);
+        this.db!.adminSessions ||= [];
+        return;
+      }
+
+      // 2. Otherwise read the bundled data/bkbeauty_db.json file if it exists
+      if (fs.existsSync(DB_FILE)) {
+        const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
+        const loadedData: DatabaseSchema = JSON.parse(fileContent);
+        loadedData.adminSessions ||= [];
+        if (!loadedData.products || loadedData.products.length === 0) {
+          loadedData.products = INITIAL_PRODUCTS;
+        }
+        if (!loadedData.categories || loadedData.categories.length === 0) {
+          loadedData.categories = INITIAL_CATEGORIES;
+        }
+        this.db = loadedData;
+        return;
+      }
+
+      // 3. Fallback to initialData
+      this.db = initialData;
+      if (!process.env.VERCEL) {
+        if (!fs.existsSync(DATA_DIR)) {
+          fs.mkdirSync(DATA_DIR, { recursive: true });
+        }
+        fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+      }
+    } catch (e) {
+      console.error('Database init fallback to memory:', e);
+      this.db = initialData;
+    }
+  }
+
+  private save(): void {
+    if (!this.db) return;
+    try {
+      if (process.env.VERCEL) {
+        fs.writeFileSync(TMP_DB_FILE, JSON.stringify(this.db, null, 2), 'utf-8');
+      } else {
+        const tempFile = `${DB_FILE}.tmp`;
+        fs.writeFileSync(tempFile, JSON.stringify(this.db, null, 2), 'utf-8');
+        fs.renameSync(tempFile, DB_FILE);
+      }
+    } catch (e) {
+      console.error('Save skipped (read-only filesystem):', e);
+    }
+  }
   // --- Products ---
   public getProducts(params?: { category?: string; search?: string; inStockOnly?: boolean; featured?: boolean }): Product[] {
     this.ensureInitialized();
