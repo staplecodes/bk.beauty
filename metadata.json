@@ -1,0 +1,8 @@
+{
+  "name": "BK BEAUTY | Cosmétiques & Parfumerie Laghouat",
+  "description": "Boutique de cosmétiques et beauté haut de gamme à Laghouat, Algérie. Maquillage, soins visage & corps, parfums de luxe et accessoires avec paiement à la livraison (Cash on Delivery / دج).",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 600" fill="none">
+  <rect width="480" height="600" rx="24" fill="#FAF7F2"/>
+  <circle cx="240" cy="256" r="88" fill="#E8C9CD" fill-opacity=".45"/>
+  <path d="M194 300h92l-10-102h-72l-10 102Z" stroke="#642C40" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M216 198v-26h48v26M204 232h72" stroke="#C5A46D" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="240" y="408" text-anchor="middle" fill="#642C40" font-family="Georgia,serif" font-size="32" font-weight="700">BK BEAUTY</text>
+  <text x="240" y="444" text-anchor="middle" fill="#8B7378" font-family="Arial,sans-serif" font-size="17">Image non disponible</text>
+</svg>

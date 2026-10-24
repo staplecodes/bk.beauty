@@ -1,0 +1,777 @@
+{
+  "adminUsers": [
+    {
+      "email": "admin@bkbeauty.com",
+      "role": "admin"
+    }
+  ],
+  "adminPasswordHash": "",
+  "adminSessions": [],
+  "categories": [
+    {
+      "id": "cat_maquillage",
+      "slug": "maquillage",
+      "nameFr": "Maquillage",
+      "nameAr": "المكياج",
+      "descriptionFr": "Fonds de teint soyeux, rouges à lèvres veloutés et poudres haute définition.",
+      "descriptionAr": "كريمات أساس حريرية، أحمر شفاه مخملي وبودرة تثبيت فائقة النعومة.",
+      "icon": "brush"
+    },
+    {
+      "id": "cat_soins_visage",
+      "slug": "soins-du-visage",
+      "nameFr": "Soins du visage",
+      "nameAr": "العناية بالوجه",
+      "descriptionFr": "Sérums botaniques concentrés, crèmes barrière et élixirs hydratants.",
+      "descriptionAr": "سيرومات نباتية مركزة، كريمات حماية البشرة وإكسيرات الترطيب الفائق.",
+      "icon": "spa"
+    },
+    {
+      "id": "cat_soins_corps",
+      "slug": "soins-du-corps",
+      "nameFr": "Soins du corps",
+      "nameAr": "العناية بالجسم",
+      "descriptionFr": "Huiles satinées, baumes nourrissants et gommages exfoliants soyeux.",
+      "descriptionAr": "زيوت ترطيب ساتانية، زبدة مغذية ومقشرات ناعمة تدلل حواسك.",
+      "icon": "water_drop"
+    },
+    {
+      "id": "cat_parfums",
+      "slug": "parfums",
+      "nameFr": "Parfums",
+      "nameAr": "العطور",
+      "descriptionFr": "Fragrances intenses, sillages ambrés et floraux d'exception.",
+      "descriptionAr": "عطور شرقية وزهرية مميزة تدوم طويلاً وتمنحك حضوراً آسراً.",
+      "icon": "local_florist"
+    },
+    {
+      "id": "cat_soins_capillaires",
+      "slug": "soins-capillaires",
+      "nameFr": "Soins capillaires",
+      "nameAr": "العناية بالشعر",
+      "descriptionFr": "Masques réparateurs, huiles précieuses et shampooings doux sans sulfates.",
+      "descriptionAr": "أقنعة ترميم عميقة، زيوت مقوية وشامبو لطيف خالٍ من السلفات.",
+      "icon": "content_cut"
+    },
+    {
+      "id": "cat_accessoires",
+      "slug": "accessoires-beaute",
+      "nameFr": "Accessoires beauté",
+      "nameAr": "إكسسوارات التجميل",
+      "descriptionFr": "Pinceaux d'artisan vegan, éponges précision et trousses de voyage.",
+      "descriptionAr": "فراشي احترافية ناعمة، إسفنجات دمج دقيقة وحقائب مكياج فاخرة.",
+      "icon": "auto_fix_high"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod_foundation_silk",
+      "sku": "BK-FDN-01",
+      "nameFr": "Lumière Hydrating Silk Foundation",
+      "nameAr": "كريم أساس لوميير الحريري المرطب",
+      "descriptionFr": "Formule fluide infusée de protéines de soie micro-filtrées et d'acide hyaluronique pur. Offre un fini satiné naturel effet seconde peau avec 24h d'hydratation.",
+      "descriptionAr": "تركيبة غنية ببروتينات الحرير المفلترة وحمض الهيالورونيك، تمنح تغطية طبيعية حريرية تدوم طوال اليوم مع ترطيب عميق بدون لمعان زائد.",
+      "category": "cat_maquillage",
+      "price": 4800,
+      "originalPrice": 5600,
+      "image": "/src/assets/images/product_silk_foundation_1792358662724.jpg",
+      "stockQuantity": 42,
+      "inStock": true,
+      "featured": true,
+      "isNewArrival": false,
+      "badgeFr": "Best-Seller",
+      "badgeAr": "الأكثر طلباً",
+      "variants": [
+        {
+          "id": "sh_090",
+          "nameFr": "090 Porcelaine Claire",
+          "nameAr": "090 بورسلين فاتح",
+          "sku": "BK-FDN-01-090",
+          "colorHex": "#F7E7DE",
+          "inStock": true,
+          "stockQuantity": 10
+        },
+        {
+          "id": "sh_120",
+          "nameFr": "120 Sable Naturel",
+          "nameAr": "120 رملي طبيعي",
+          "sku": "BK-FDN-01-120",
+          "colorHex": "#E9CEBA",
+          "inStock": true,
+          "stockQuantity": 18
+        },
+        {
+          "id": "sh_210",
+          "nameFr": "210 Amande Chaude",
+          "nameAr": "210 لوز دافئ",
+          "sku": "BK-FDN-01-210",
+          "colorHex": "#D5AD8E",
+          "inStock": true,
+          "stockQuantity": 9
+        },
+        {
+          "id": "sh_330",
+          "nameFr": "330 Châtaigne Dorée",
+          "nameAr": "330 كستنائي مائل للذهبي",
+          "sku": "BK-FDN-01-330",
+          "colorHex": "#935F42",
+          "inStock": true,
+          "stockQuantity": 5
+        }
+      ],
+      "createdAt": "2026-10-24T08:25:14.767Z",
+      "updatedAt": "2026-10-24T08:25:14.770Z"
+    },
+    {
+      "id": "prod_rose_serum",
+      "sku": "BK-SRM-02",
+      "nameFr": "Rose Petal Peptides Overnight Serum",
+      "nameAr": "سيروم بتلات الورد بالببتيدات لتجديد البشرة",
+      "descriptionFr": "Concentré régénérant de nuit mariant peptides de cuivre et essence de rose de Damas fraîchement cueillie. Répare la barrière cutanée et redonne fermeté et éclat.",
+      "descriptionAr": "سيروم ليلي غني بببتيدات النحاس وخلاصة الورد الجوري، يعمل على ترميم حاجز البشرة واستعادة نضارتها وإشراقتها الصباحية الفورية.",
+      "category": "cat_soins_visage",
+      "price": 6500,
+      "originalPrice": 7200,
+      "image": "/src/assets/images/product_rose_elixir_serum_1792358664394.jpg",
+      "stockQuantity": 16,
+      "inStock": true,
+      "featured": true,
+      "isNewArrival": true,
+      "badgeFr": "Nouveauté",
+      "badgeAr": "جديد",
+      "variants": [
+        {
+          "id": "vol_30ml",
+          "nameFr": "Flacon Compte-gouttes 30ml",
+          "nameAr": "قارورة قطارة 30 مل",
+          "sku": "BK-SRM-02-30",
+          "inStock": true,
+          "stockQuantity": 10
+        },
+        {
+          "id": "vol_50ml",
+          "nameFr": "Format Prestige 50ml (+1,500 DA)",
+          "nameAr": "حجم برستيج 50 مل (+1500 دج)",
+          "sku": "BK-SRM-02-50",
+          "inStock": true,
+          "stockQuantity": 6
+        }
+      ],
+      "createdAt": "2026-10-24T08:25:14.770Z",
+      "updatedAt": "2026-10-24T08:25:14.770Z"
+    },
+    {
+      "id": "prod_velvet_lipstick",
+      "sku": "BK-LIP-03",
+      "nameFr": "Velvet Matte Sculpting Lipstick",
+      "nameAr": "أحمر شفاه مخملي مطفأ فائق الثبات",
+      "descriptionFr": "Rouge à lèvres haute pigmentation au fini velours mat non asséchant. Enrichi en beurre de karité bio et huile de grenade pour 12 heures de confort absolu.",
+      "descriptionAr": "لون غني بلمسة مخملية غير لامعة لا تسبب جفاف الشفاه، معزز بزبدة الشيا وزيت الرمان الطبيعي لثبات يدوم حتى 12 ساعة.",
+      "category": "cat_maquillage",
+      "price": 2900,
+      "image": "/src/assets/images/product_velvet_rouge_lipstick_1792358664698.jpg",
+      "stockQuantity": 27,
+      "inStock": true,
+      "featured": true,
+      "isNewArrival": false,
+      "badgeFr": "Favori",
+      "badgeAr": "المفضل",
+      "variants": [
+        {
+          "id": "lip_noir_rouge",
+          "nameFr": "Noir Rouge (Bordeaux Profond)",
+          "nameAr": "عنابي داكن كلاسيكي",
+          "sku": "BK-LIP-03-NR",
+          "colorHex": "#642C40",
+          "inStock": true,
+          "stockQuantity": 11
+        },
+        {
+          "id": "lip_rose_poudre",
+          "nameFr": "Rose Poudré (Nude Délicat)",
+          "nameAr": "وردي بودري نيود",
+          "sku": "BK-LIP-03-RP",
+          "colorHex": "#C9828B",
+          "inStock": true,
+          "stockQuantity": 10
+        },
+        {
+          "id": "lip_caramel_miel",
+          "nameFr": "Caramel Miel (Chaud)",
+          "nameAr": "كراميل عسلي دافئ",
+          "sku": "BK-LIP-03-CM",
+          "colorHex": "#A06346",
+          "inStock": true,
+          "stockQuantity": 6
+        }
+      ],
+      "createdAt": "2026-10-24T08:25:14.770Z",
+      "updatedAt": "2026-10-24T08:25:14.770Z"
+    },
+    {
+      "id": "prod_contouring_brush",
+      "sku": "BK-BRS-04",
+      "nameFr": "Artistry No. 101 Precision Contouring Brush",
+      "nameAr": "فرشاة نحت الوجه الاحترافية رقم 101",
+      "descriptionFr": "Pinceau biseauté d'artisan avec manche en bois laqué espresso et virole or champagne. Poils synthétiques ultra-denses coupés à la main pour sculpter pommettes et contours sans démarcation.",
+      "descriptionAr": "فرشاة مكياج مشطوفة بمقبض خشبي مطلي باللون البني وشعيرات حريرية نباتية كثيفة تتيح دمج وتحديد ملامح الوجه بكل دقة واحترافية.",
+      "category": "cat_accessoires",
+      "price": 3200,
+      "image": "/src/assets/images/product_contouring_brush_1792358665018.jpg",
+      "stockQuantity": 19,
+      "inStock": true,
+      "featured": true,
+      "isNewArrival": true,
+      "badgeFr": "100% Vegan",
+      "badgeAr": "نباتي 100%",
+      "createdAt": "2026-10-24T08:25:14.770Z",
+      "updatedAt": "2026-10-24T08:25:14.770Z"
+    },
+    {
+      "id": "prod_botanical_glow_oil",
+      "sku": "BK-OIL-05",
+      "nameFr": "Éclat d'Or Botanical Face Oil",
+      "nameAr": "زيت الوجه النباتي الذهبي لإشراقة فورية",
+      "descriptionFr": "Huile sèche précieuse infusée de squalane végétal, huile de jojoba du Sahara et particules d'or micronisées. Pénètre instantanément sans fini gras pour un teint rayonnant.",
+      "descriptionAr": "زيت نباتي جاف بتركيبة سريعة الامتصاص مع ذرات ذهبية متناهية الصغر وزيت الجوجوبا، يمنح بشرتك إشراقة مخملية ولمعاناً صحياً لا يُقاوم.",
+      "category": "cat_soins_visage",
+      "price": 5900,
+      "originalPrice": 6500,
+      "image": "/src/assets/images/hero_bk_beauty_cosmetics_1792358663044.jpg",
+      "stockQuantity": 11,
+      "inStock": true,
+      "featured": true,
+      "isNewArrival": true,
+      "badgeFr": "Coup de Cœur",
+      "badgeAr": "موصى به",
+      "createdAt": "2026-10-24T08:25:14.770Z",
+      "updatedAt": "2026-10-24T08:25:14.770Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord_1792876453045_k6rl",
+      "reference": "BK-261024-4879",
+      "customer": {
+        "fullName": "hh",
+        "phone": "0699911724",
+        "wilayaCode": "04",
+        "wilayaNameFr": "Oum El Bouaghi",
+        "wilayaNameAr": "أم البواقي",
+        "commune": "laghoiuat",
+        "address": "lok",
+        "notes": ""
+      },
+      "items": [
+        {
+          "productId": "prod_velvet_lipstick",
+          "productNameFr": "Velvet Matte Sculpting Lipstick",
+          "productNameAr": "أحمر شفاه مخملي مطفأ فائق الثبات",
+          "sku": "BK-LIP-03",
+          "variantId": "lip_noir_rouge",
+          "variantNameFr": "Noir Rouge (Bordeaux Profond)",
+          "variantNameAr": "عنابي داكن كلاسيكي",
+          "unitPrice": 2900,
+          "quantity": 1,
+          "lineTotal": 2900,
+          "image": "/src/assets/images/product_velvet_rouge_lipstick_1792358664698.jpg"
+        }
+      ],
+      "subtotal": 2900,
+      "deliveryFee": 650,
+      "finalTotal": 3550,
+      "paymentMethod": "cash_on_delivery",
+      "status": "Nouvelle",
+      "statusHistory": [
+        {
+          "status": "Nouvelle",
+          "timestamp": "2026-10-24T21:14:13.045Z",
+          "note": "Commande enregistrée via la boutique en ligne (Paiement à la livraison)"
+        }
+      ],
+      "createdAt": "2026-10-24T21:14:13.045Z",
+      "updatedAt": "2026-10-24T21:14:13.045Z"
+    }
+  ],
+  "wilayas": [
+    {
+      "code": "01",
+      "nameFr": "Adrar",
+      "nameAr": "أدرار",
+      "deliveryFee": 850,
+      "estimatedDays": "3-5 jours",
+      "active": true
+    },
+    {
+      "code": "02",
+      "nameFr": "Chlef",
+      "nameAr": "الشلف",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "03",
+      "nameFr": "Laghouat (Local)",
+      "nameAr": "الأغواط (المقر الرئيسي)",
+      "deliveryFee": 350,
+      "estimatedDays": "24h Express",
+      "active": true
+    },
+    {
+      "code": "04",
+      "nameFr": "Oum El Bouaghi",
+      "nameAr": "أم البواقي",
+      "deliveryFee": 650,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "05",
+      "nameFr": "Batna",
+      "nameAr": "باتنة",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "06",
+      "nameFr": "Béjaïa",
+      "nameAr": "بجاية",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "07",
+      "nameFr": "Biskra",
+      "nameAr": "بسكرة",
+      "deliveryFee": 500,
+      "estimatedDays": "1-2 jours",
+      "active": true
+    },
+    {
+      "code": "08",
+      "nameFr": "Béchar",
+      "nameAr": "بشار",
+      "deliveryFee": 800,
+      "estimatedDays": "3-4 jours",
+      "active": true
+    },
+    {
+      "code": "09",
+      "nameFr": "Blida",
+      "nameAr": "البليدة",
+      "deliveryFee": 550,
+      "estimatedDays": "1-2 jours",
+      "active": true
+    },
+    {
+      "code": "10",
+      "nameFr": "Bouira",
+      "nameAr": "البويرة",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "11",
+      "nameFr": "Tamanrasset",
+      "nameAr": "تمنراست",
+      "deliveryFee": 1100,
+      "estimatedDays": "4-6 jours",
+      "active": true
+    },
+    {
+      "code": "12",
+      "nameFr": "Tébessa",
+      "nameAr": "تبسة",
+      "deliveryFee": 700,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "13",
+      "nameFr": "Tlemcen",
+      "nameAr": "تلمسان",
+      "deliveryFee": 650,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "14",
+      "nameFr": "Tiaret",
+      "nameAr": "تيارت",
+      "deliveryFee": 550,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "15",
+      "nameFr": "Tizi Ouzou",
+      "nameAr": "تيزي وزو",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "16",
+      "nameFr": "Alger",
+      "nameAr": "الجزائر العاصمة",
+      "deliveryFee": 500,
+      "estimatedDays": "24-48h",
+      "active": true
+    },
+    {
+      "code": "17",
+      "nameFr": "Djelfa",
+      "nameAr": "الجلفة",
+      "deliveryFee": 450,
+      "estimatedDays": "24-48h",
+      "active": true
+    },
+    {
+      "code": "18",
+      "nameFr": "Jijel",
+      "nameAr": "جيجل",
+      "deliveryFee": 650,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "19",
+      "nameFr": "Sétif",
+      "nameAr": "سطيف",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "20",
+      "nameFr": "Saïda",
+      "nameAr": "سعيدة",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "21",
+      "nameFr": "Skikda",
+      "nameAr": "سكيكدة",
+      "deliveryFee": 650,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "22",
+      "nameFr": "Sidi Bel Abbès",
+      "nameAr": "سيدي بلعباس",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "23",
+      "nameFr": "Annaba",
+      "nameAr": "عنابة",
+      "deliveryFee": 650,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "24",
+      "nameFr": "Guelma",
+      "nameAr": "قالمة",
+      "deliveryFee": 650,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "25",
+      "nameFr": "Constantine",
+      "nameAr": "قسنطينة",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "26",
+      "nameFr": "Médéa",
+      "nameAr": "المدية",
+      "deliveryFee": 550,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "27",
+      "nameFr": "Mostaganem",
+      "nameAr": "مستغانم",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "28",
+      "nameFr": "M'Sila",
+      "nameAr": "المسيلة",
+      "deliveryFee": 550,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "29",
+      "nameFr": "Mascara",
+      "nameAr": "معسكر",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "30",
+      "nameFr": "Ouargla",
+      "nameAr": "ورقلة",
+      "deliveryFee": 500,
+      "estimatedDays": "1-2 jours",
+      "active": true
+    },
+    {
+      "code": "31",
+      "nameFr": "Oran",
+      "nameAr": "وهران",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "32",
+      "nameFr": "El Bayadh",
+      "nameAr": "البيض",
+      "deliveryFee": 550,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "33",
+      "nameFr": "Illizi",
+      "nameAr": "إليزي",
+      "deliveryFee": 1100,
+      "estimatedDays": "4-6 jours",
+      "active": true
+    },
+    {
+      "code": "34",
+      "nameFr": "Bordj Bou Arreridj",
+      "nameAr": "برج بوعريريج",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "35",
+      "nameFr": "Boumerdès",
+      "nameAr": "بومرداس",
+      "deliveryFee": 550,
+      "estimatedDays": "1-2 jours",
+      "active": true
+    },
+    {
+      "code": "36",
+      "nameFr": "El Tarf",
+      "nameAr": "الطارف",
+      "deliveryFee": 700,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "37",
+      "nameFr": "Tindouf",
+      "nameAr": "تندوف",
+      "deliveryFee": 1200,
+      "estimatedDays": "4-7 jours",
+      "active": true
+    },
+    {
+      "code": "38",
+      "nameFr": "Tissemsilt",
+      "nameAr": "تيسمسيلت",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "39",
+      "nameFr": "El Oued",
+      "nameAr": "الوادي",
+      "deliveryFee": 550,
+      "estimatedDays": "1-3 jours",
+      "active": true
+    },
+    {
+      "code": "40",
+      "nameFr": "Khenchela",
+      "nameAr": "خنشلة",
+      "deliveryFee": 650,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "41",
+      "nameFr": "Souk Ahras",
+      "nameAr": "سوق أهراس",
+      "deliveryFee": 700,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "42",
+      "nameFr": "Tipaza",
+      "nameAr": "تيبازة",
+      "deliveryFee": 550,
+      "estimatedDays": "1-2 jours",
+      "active": true
+    },
+    {
+      "code": "43",
+      "nameFr": "Mila",
+      "nameAr": "ميلة",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "44",
+      "nameFr": "Aïn Defla",
+      "nameAr": "عين الدفلى",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "45",
+      "nameFr": "Naâma",
+      "nameAr": "النعامة",
+      "deliveryFee": 650,
+      "estimatedDays": "2-4 jours",
+      "active": true
+    },
+    {
+      "code": "46",
+      "nameFr": "Aïn Témouchent",
+      "nameAr": "عين تموشنت",
+      "deliveryFee": 650,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "47",
+      "nameFr": "Ghardaïa",
+      "nameAr": "غرداية",
+      "deliveryFee": 450,
+      "estimatedDays": "1-2 jours",
+      "active": true
+    },
+    {
+      "code": "48",
+      "nameFr": "Relizane",
+      "nameAr": "غليزان",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "49",
+      "nameFr": "El M'Ghair",
+      "nameAr": "المغير",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "50",
+      "nameFr": "El Meniaa",
+      "nameAr": "المنيعة",
+      "deliveryFee": 600,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "51",
+      "nameFr": "Ouled Djellal",
+      "nameAr": "أولاد جلال",
+      "deliveryFee": 500,
+      "estimatedDays": "1-2 jours",
+      "active": true
+    },
+    {
+      "code": "52",
+      "nameFr": "Bordj Baji Mokhtar",
+      "nameAr": "برج باجي مختار",
+      "deliveryFee": 1300,
+      "estimatedDays": "5-8 jours",
+      "active": true
+    },
+    {
+      "code": "53",
+      "nameFr": "Béni Abbès",
+      "nameAr": "بني عباس",
+      "deliveryFee": 900,
+      "estimatedDays": "3-5 jours",
+      "active": true
+    },
+    {
+      "code": "54",
+      "nameFr": "Timimoun",
+      "nameAr": "تيميمون",
+      "deliveryFee": 900,
+      "estimatedDays": "3-5 jours",
+      "active": true
+    },
+    {
+      "code": "55",
+      "nameFr": "Touggourt",
+      "nameAr": "تقرت",
+      "deliveryFee": 550,
+      "estimatedDays": "2-3 jours",
+      "active": true
+    },
+    {
+      "code": "56",
+      "nameFr": "Djanet",
+      "nameAr": "جانت",
+      "deliveryFee": 1300,
+      "estimatedDays": "5-8 jours",
+      "active": true
+    },
+    {
+      "code": "57",
+      "nameFr": "In Salah",
+      "nameAr": "عين صالح",
+      "deliveryFee": 1000,
+      "estimatedDays": "3-6 jours",
+      "active": true
+    },
+    {
+      "code": "58",
+      "nameFr": "In Guezzam",
+      "nameAr": "عين قزام",
+      "deliveryFee": 1400,
+      "estimatedDays": "5-8 jours",
+      "active": true
+    }
+  ],
+  "settings": {
+    "storeName": "BK BEAUTY",
+    "announcementFr": "Livraison express & Paiement à la livraison (Cash on Delivery) partout en Algérie",
+    "announcementAr": "توصيل سريع ودفع عند الاستلام (Cash on Delivery) في جميع أنحاء الجزائر",
+    "instagramUrl": "https://www.instagram.com/bachir_bk_beauty03/",
+    "phoneHotline": "+213 555 00 00 00",
+    "emailContact": "contact@bkbeauty.dz",
+    "locationCityFr": "Laghouat, Algérie",
+    "locationCityAr": "الأغواط، الجزائر",
+    "lowStockThreshold": 10,
+    "freeDeliveryThreshold": 12000,
+    "defaultDeliveryFee": 500,
+    "isStoreOpen": true
+  },
+  "version": 1
+}

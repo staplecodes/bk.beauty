@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+  <defs>
+    <!-- Soft radial glow for the sparkle -->
+    <radialGradient id="sparkleGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Subtle metallic sheen for the BK lettering -->
+    <linearGradient id="bkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F3E7C8"/>
+      <stop offset="40%" stop-color="#E8C99B"/>
+      <stop offset="60%" stop-color="#D4A76E"/>
+      <stop offset="100%" stop-color="#C5A46D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Transparent background by default -->
+
+  <!-- Outer black circular field -->
+  <circle cx="300" cy="300" r="280" fill="#000000"/>
+
+  <!-- Double concentric gold rings near the perimeter -->
+  <circle cx="300" cy="300" r="266" fill="none" stroke="#C5A46D" stroke-width="5"/>
+  <circle cx="300" cy="300" r="252" fill="none" stroke="#C5A46D" stroke-width="2"/>
+
+  <!-- Sparkle / star at top-right (~1 o'clock position) -->
+  <g transform="translate(430, 185)">
+    <circle cx="0" cy="0" r="14" fill="url(#sparkleGlow)"/>
+    <rect x="-1.5" y="-22" width="3" height="22" fill="#FFFFFF" opacity="0.95"/>
+    <rect x="-1.5" y="1" width="3" height="22" fill="#FFFFFF" opacity="0.95"/>
+    <rect x="-22" y="-1.5" width="22" height="3" fill="#FFFFFF" opacity="0.9"/>
+    <rect x="1" y="-1.5" width="22" height="3" fill="#FFFFFF" opacity="0.9"/>
+    <rect x="-14" y="-14" width="3" height="28" fill="#FFFFFF" opacity="0.75" transform="rotate(45)"/>
+    <rect x="11" y="-14" width="3" height="28" fill="#FFFFFF" opacity="0.75" transform="rotate(-45)"/>
+  </g>
+
+  <!-- "BK" monogram — large serif, centered above middle -->
+  <text x="300" y="265"
+        font-family="Playfair Display, 'Times New Roman', serif"
+        font-size="165"
+        font-weight="700"
+        text-anchor="middle"
+        fill="url(#bkGradient)"
+        letter-spacing="-4">BK</text>
+
+  <!-- "BEAUTY" — smaller all-caps serif, centered below BK -->
+  <text x="300" y="345"
+        font-family="Playfair Display, 'Times New Roman', serif"
+        font-size="52"
+        font-weight="600"
+        text-anchor="middle"
+        fill="#E8C9CD"
+        letter-spacing="10">BEAUTY</text>
+</svg>
