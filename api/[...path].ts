@@ -374,4 +374,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err: any) {
     return res.status(500).json({ error: err?.message || 'Server error' });
   }
+  // --- 8. POST /api/admin/login ---
+    if (req.method === 'POST' && url.endsWith('/api/admin/login')) {
+      const { email, password } = req.body || {};
+      if (email?.trim().toLowerCase() === 'admin@bkbeauty.dz' && password === 'admin12345678') {
+        return res.status(200).json({
+          success: true,
+          user: { id: 'admin_1', email: 'admin@bkbeauty.dz', name: 'BK Beauty Admin', role: 'admin' }
+        });
+      }
+      return res.status(401).json({ error: 'Invalid username or password.' });
+    }
+
+    // --- 9. GET /api/admin/orders ---
+    if (req.method === 'GET' && url.endsWith('/api/admin/orders')) {
+      return res.status(200).json({ orders: db.orders || [] });
+    }
+
+    // --- 10. GET /api/admin/dashboard-stats ---
+    if (req.method === 'GET' && url.endsWith('/api/admin/dashboard-stats')) {
+      const orders = db.orders || [];
+      return res.status(200).json({
+        stats: {
+          totalOrders: orders.length,
+          newPendingOrders: orders.filter((o: any) => o.status === 'Nouvelle').length,
+          confirmedOrders: orders.filter((o: any) => o.status === 'Confirmée').length,
+          deliveredOrders: orders.filter((o: any) => o.status === 'Livrée').length,
+          recentOrders: orders.slice(0, 10),
+        }
+      });
+    }
 }
