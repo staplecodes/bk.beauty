@@ -256,10 +256,89 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = getDb();
     const url = (req.url || '').split('?')[0];
 
+    // --- 0. ADMIN LOGIN ---
+    if (req.method === 'POST' && (url.endsWith('/api/admin/login') || url.includes('admin/login'))) {
+      const { email, password } = req.body || {};
+      const username = (email || '').trim().toLowerCase();
+      const pass = (password || '').trim();
+
+      if ((username === 'admin@bkbeauty.dz' || username === 'admin') && pass === 'admin12345678') {
+        return res.status(200).json({
+          success: true,
+          user: { 
+            id: 'admin_1', 
+            email: 'admin@bkbeauty.dz', 
+            name: 'BK Beauty Admin', 
+            role: 'admin' 
+          }
+        });
+      }
+      return res.status(401).json({ error: 'Identifiants invalides.' });
+    }
+
+    // --- ADMIN ME ---
+    if (req.method === 'GET' && (url.endsWith('/api/admin/me') || url.includes('admin/me'))) {
+      return res.status(200).json({
+        user: { 
+          id: 'admin_1', 
+          email: 'admin@bkbeauty.dz', 
+          name: 'BK Beauty Admin', 
+          role: 'admin' 
+        }
+      });
+    }
+
+    // --- ADMIN DASHBOARD STATS ---
+    if (req.method === 'GET' && url.endsWith('/api/admin/dashboard-stats')) {
+      const orders = db.orders || [];
+      return res.status(200).json({
+        stats: {
+          totalOrders: orders.length,
+          newPendingOrders: orders.filter((o: any) => o.status === 'Nouvelle').length,
+          confirmedOrders: orders.filter((o: any) => o.status === 'Confirmée').length,
+          deliveredOrders: orders.filter((o: any) => o.status === 'Livrée').length,
+          recentOrders: orders.slice(0, 10),
+        }
+      });
+    }
+
+    // --- ADMIN ORDERS ---
+    if (req.method === 'GET' && url.endsWith('/api/admin/orders')) {
+      return res.status(200).json({ orders: db.orders || [] });
+    }
+
+    // --- ADMIN PRODUCTS (POST / PUT / DELETE - ADD & MODIFY) ---
+    if ((req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') && (url.includes('/api/admin/products') || url.includes('admin/products'))) {
+      if (req.method === 'POST' || req.method === 'PUT') {
+        const item = req.body;
+        if (!item.id) {
+          item.id = 'prod_' + Date.now();
+        }
+        item.updatedAt = new Date().toISOString();
+        if (!item.createdAt) item.createdAt = item.updatedAt;
+
+        const index = (db.products || []).findIndex((p: any) => p.id === item.id);
+        if (index >= 0) {
+          db.products[index] = { ...db.products[index], ...item };
+        } else {
+          if (!db.products) db.products = [];
+          db.products.push(item);
+        }
+        saveDb(db);
+        return res.status(200).json({ success: true, product: item, products: db.products });
+      }
+      if (req.method === 'DELETE') {
+        const { id } = req.body || {};
+        db.products = (db.products || []).filter((p: any) => p.id !== id);
+        saveDb(db);
+        return res.status(200).json({ success: true, products: db.products });
+      }
+    }
+
     // 1. GET /api/public/products/:id
     const singleProductMatch = url.match(/\/api\/public\/products\/([^/]+)$/);
     if (req.method === 'GET' && singleProductMatch) {
-      const product = db.products.find((p: any) => p.id === singleProductMatch[1]);
+      const product = (db.products || INITIAL_PRODUCTS).find((p: any) => p.id === singleProductMatch[1]);
       if (!product) return res.status(404).json({ error: 'Produit introuvable' });
       return res.status(200).json({ product });
     }
@@ -267,7 +346,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. GET /api/public/products
     if (req.method === 'GET' && url.endsWith('/api/public/products')) {
       const { category, search, inStockOnly, featured } = req.query;
-      let prods = [...(db.products || [])];
+      let prods = [...(db.products || INITIAL_PRODUCTS)];
       if (category && category !== 'all') prods = prods.filter((p: any) => p.category === category);
       if (featured === 'true') prods = prods.filter((p: any) => p.featured);
       if (inStockOnly === 'true') prods = prods.filter((p: any) => p.inStock && p.stockQuantity > 0);
@@ -286,9 +365,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 3. GET /api/public/categories
     if (req.method === 'GET' && url.endsWith('/api/public/categories')) {
-      const categories = (db.categories || []).map((cat: any) => ({
+      const categories = (db.categories || INITIAL_CATEGORIES).map((cat: any) => ({
         ...cat,
-        productCount: (db.products || []).filter((p: any) => p.category === cat.id && p.inStock).length,
+        productCount: (db.products || INITIAL_PRODUCTS).filter((p: any) => p.category === cat.id && p.inStock).length,
       }));
       return res.status(200).json({ categories });
     }
@@ -312,7 +391,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const wilaya = (db.wilayas || INITIAL_WILAYAS).find((w: any) => w.code === customer.wilayaCode) || INITIAL_WILAYAS[0];
       let subtotal = 0;
       const verifiedItems = items.map((item: any) => {
-        const prod = (db.products || []).find((p: any) => p.id === item.productId) || INITIAL_PRODUCTS[0];
+        const prod = (db.products || INITIAL_PRODUCTS).find((p: any) => p.id === item.productId) || INITIAL_PRODUCTS[0];
         const lineTotal = prod.price * (item.quantity || 1);
         subtotal += lineTotal;
         return {
@@ -374,52 +453,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err: any) {
     return res.status(500).json({ error: err?.message || 'Server error' });
   }
-  // --- POST /api/admin/login ---
-    if (req.method === 'POST') {
-      const { email, password } = req.body || {};
-      const username = (email || '').trim().toLowerCase();
-      const pass = (password || '').trim();
-
-      if ((username === 'admin@bkbeauty.dz' || username === 'admin') && pass === 'admin12345678') {
-        return res.status(200).json({
-          success: true,
-          user: { 
-            id: 'admin_1', 
-            email: 'admin@bkbeauty.dz', 
-            name: 'BK Beauty Admin', 
-            role: 'admin' 
-          }
-        });
-      }
-      return res.status(401).json({ error: 'Identifiants invalides.' });
-    }
-    // --- GET /api/admin/me ---
-    if (req.method === 'GET' && (url.endsWith('/api/admin/me') || url.includes('admin/me'))) {
-      return res.status(200).json({
-        user: { 
-          id: 'admin_1', 
-          email: 'admin@bkbeauty.dz', 
-          name: 'BK Beauty Admin', 
-          role: 'admin' 
-        }
-      });
-    }
-    // --- 9. GET /api/admin/orders ---
-    if (req.method === 'GET' && url.endsWith('/api/admin/orders')) {
-      return res.status(200).json({ orders: db.orders || [] });
-    }
-
-    // --- 10. GET /api/admin/dashboard-stats ---
-    if (req.method === 'GET' && url.endsWith('/api/admin/dashboard-stats')) {
-      const orders = db.orders || [];
-      return res.status(200).json({
-        stats: {
-          totalOrders: orders.length,
-          newPendingOrders: orders.filter((o: any) => o.status === 'Nouvelle').length,
-          confirmedOrders: orders.filter((o: any) => o.status === 'Confirmée').length,
-          deliveredOrders: orders.filter((o: any) => o.status === 'Livrée').length,
-          recentOrders: orders.slice(0, 10),
-        }
-      });
-    }
 }
