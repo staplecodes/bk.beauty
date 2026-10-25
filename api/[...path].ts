@@ -380,6 +380,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const username = email?.trim().toLowerCase();
       
       if ((username === 'admin@bkbeauty.dz' || username === 'admin') && password === 'admin12345678') {
+        res.setHeader('Set-Cookie', 'bk_admin_session=active_session_token; Path=/; HttpOnly; SameSite=Lax');
         return res.status(200).json({
           success: true,
           user: { 
@@ -392,7 +393,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       return res.status(401).json({ error: 'Identifiant ou mot de passe incorrect.' });
     }
-
     // --- 9. GET /api/admin/orders ---
     if (req.method === 'GET' && url.endsWith('/api/admin/orders')) {
       return res.status(200).json({ orders: db.orders || [] });
