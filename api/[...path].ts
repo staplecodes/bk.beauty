@@ -393,6 +393,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       return res.status(401).json({ error: 'Identifiant ou mot de passe incorrect.' });
     }
+    // --- GET /api/admin/me ---
+    if (req.method === 'GET' && (url.endsWith('/api/admin/me') || url.includes('admin/me'))) {
+      return res.status(200).json({
+        user: { 
+          id: 'admin_1', 
+          email: 'admin@bkbeauty.dz', 
+          name: 'BK Beauty Admin', 
+          role: 'admin' 
+        }
+      });
+    }
     // --- 9. GET /api/admin/orders ---
     if (req.method === 'GET' && url.endsWith('/api/admin/orders')) {
       return res.status(200).json({ orders: db.orders || [] });
