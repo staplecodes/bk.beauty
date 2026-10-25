@@ -374,16 +374,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err: any) {
     return res.status(500).json({ error: err?.message || 'Server error' });
   }
-  // --- 8. POST /api/admin/login ---
-    if (req.method === 'POST' && url.endsWith('/api/admin/login')) {
+  // --- POST /api/admin/login ---
+    if (req.method === 'POST' && (url.endsWith('/api/admin/login') || url.includes('admin/login'))) {
       const { email, password } = req.body || {};
-      if (email?.trim().toLowerCase() === 'admin@bkbeauty.dz' && password === 'admin12345678') {
+      const username = email?.trim().toLowerCase();
+      
+      if ((username === 'admin@bkbeauty.dz' || username === 'admin') && password === 'admin12345678') {
         return res.status(200).json({
           success: true,
-          user: { id: 'admin_1', email: 'admin@bkbeauty.dz', name: 'BK Beauty Admin', role: 'admin' }
+          user: { 
+            id: 'admin_1', 
+            email: 'admin@bkbeauty.dz', 
+            name: 'BK Beauty Admin', 
+            role: 'admin' 
+          }
         });
       }
-      return res.status(401).json({ error: 'Invalid username or password.' });
+      return res.status(401).json({ error: 'Identifiant ou mot de passe incorrect.' });
     }
 
     // --- 9. GET /api/admin/orders ---
