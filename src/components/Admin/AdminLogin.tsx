@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface AdminLoginProps {
@@ -8,7 +7,6 @@ interface AdminLoginProps {
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onReturnToStorefront }) => {
-  const { login } = useAuth();
   const { language, setLanguage } = useLanguage();
   const isArabic = language === 'ar';
 
@@ -23,12 +21,27 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onReturnToSto
     setErrorMsg(null);
     setIsAuthenticating(true);
 
-    const result = await login(email, password);
-    setIsAuthenticating(false);
-    if (result.success) {
-      onSuccess();
-    } else {
-      setErrorMsg(result.error || (isArabic ? 'بيانات الدخول غير صحيحة.' : 'Identifiants invalides.'));
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      setIsAuthenticating(false);
+
+      if (response.ok && data.success) {
+        localStorage.setItem('bk_admin_logged', 'true');
+        onSuccess();
+        // إجبار التوجيه لوحة التحكم مباشرة
+        window.location.href = '/admin';
+      } else {
+        setErrorMsg(data.error || (isArabic ? 'بيانات الدخول غير صحيحة.' : 'Identifiants invalides.'));
+      }
+    } catch (err) {
+      setIsAuthenticating(false);
+      setErrorMsg(isArabic ? 'حدث خطأ في الاتصال بالسيرفر.' : 'Erreur de connexion au serveur.');
     }
   };
 
@@ -98,7 +111,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onReturnToSto
                   htmlFor="admin-username"
                   className="font-semibold text-[#292526] text-[11px] uppercase tracking-wider"
                 >
-                  {isArabic ? 'اسم المستخدم' : 'Identifiant administrateur'}
+                  {isArabic ? 'اسم المستخدم أو البريد' : 'Identifiant administrateur'}
                 </label>
                 <div className="relative flex items-center">
                   <span className="material-symbols-outlined absolute left-3 rtl:left-auto rtl:right-3 text-[#C5A46D] text-lg pointer-events-none">
@@ -111,7 +124,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onReturnToSto
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder={isArabic ? 'اسم المستخدم' : 'Identifiant'}
+                    placeholder="admin@bkbeauty.dz"
                     className="w-full pl-10 pr-4 rtl:pl-4 rtl:pr-10 py-2.5 bg-[#FAF7F2] text-[#292526] text-xs font-medium rounded-lg border border-[#E8C9CD] focus:border-[#642C40] focus:bg-[#FFFFFF] transition-colors focus:outline-none"
                   />
                 </div>
@@ -135,12 +148,12 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onReturnToSto
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
+                    placeholder="••••••••"
                     className="w-full pl-10 pr-10 rtl:pl-10 rtl:pr-10 py-2.5 bg-[#FAF7F2] text-[#292526] text-xs rounded-lg border border-[#E8C9CD] focus:border-[#642C40] focus:bg-[#FFFFFF] transition-colors focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    aria-label={showPassword ? (isArabic ? 'إخفاء كلمة المرور' : 'Hide password') : (isArabic ? 'إظهار كلمة المرور' : 'Show password')}
                     className="absolute right-3 rtl:right-auto rtl:left-3 text-[#292526]/50 hover:text-[#642C40] transition-colors"
                   >
                     <span className="material-symbols-outlined text-lg">
@@ -158,12 +171,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onReturnToSto
                 <span className="material-symbols-outlined text-base">lock_open</span>
                 <span>
                   {isAuthenticating
-                    ? isArabic
-                      ? 'جارٍ التحقق...'
-                      : 'Vérification...'
-                    : isArabic
-                      ? 'تسجيل الدخول'
-                      : 'Se connecter'}
+                    ? (isArabic ? 'جارٍ التحقق...' : 'Vérification...')
+                    : (isArabic ? 'تسجيل الدخول' : 'Se connecter')}
                 </span>
               </button>
             </form>
