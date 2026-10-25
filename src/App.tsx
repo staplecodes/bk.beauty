@@ -17,7 +17,7 @@ import { InstagramSection } from './components/InstagramSection';
 import { ConciergeSection } from './components/ConciergeSection';
 import { Footer } from './components/Footer';
 import { PolicyModals } from './components/PolicyModals';
-import AdminDashboard from "./components/Admin/AdminDashboard";
+import { AdminLogin } from './components/Admin/AdminLogin';
 import { AdminDashboard } from './components/Admin/AdminDashboard';
 import { Admin403Forbidden } from './components/Admin/Admin403Forbidden';
 import { AdminLoggedOut } from './components/Admin/AdminLoggedOut';
