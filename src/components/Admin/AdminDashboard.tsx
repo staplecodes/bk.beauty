@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import {
@@ -23,27 +23,6 @@ interface AdminDashboardProps {
   onLogoutSuccess: () => void;
   onViewStorefront: () => void;
 }
-
-const safeGetLocal = <T,>(key: string, fallback: T): T => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-// Merge local edits/new items with server items (local takes priority by ID)
-const mergeById = <T extends { id?: any }>(localItems: T[], serverItems: T[]): T[] => {
-  const localMap = new Map(localItems.map((item) => [String(item.id), item]));
-  const merged = [...localItems];
-  for (const sItem of serverItems) {
-    if (!localMap.has(String(sItem.id))) {
-      merged.push(sItem);
-    }
-  }
-  return merged;
-};
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentPath,
@@ -70,104 +49,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setActionNotice(null), 3500);
   };
 
-  const loadData = useCallback(async () => {
+  const loadData = async () => {
     setIsLoading(true);
     try {
+
       const [statsRes, ordersRes, prodsRes, catsRes, wilayasRes, settingsRes] =
         await Promise.all([
-          fetch('/api/admin/dashboard-stats').catch(() => null),
-          fetch('/api/admin/orders').catch(() => null),
-          fetch('/api/public/products').catch(() => null),
-          fetch('/api/public/categories').catch(() => null),
-          fetch('/api/public/wilayas').catch(() => null),
-          fetch('/api/public/settings').catch(() => null),
+          fetch('/api/admin/dashboard-stats'),
+          fetch('/api/admin/orders'),
+          fetch('/api/public/products'),
+          fetch('/api/public/categories'),
+          fetch('/api/public/wilayas'),
+          fetch('/api/public/settings'),
         ]);
 
-      // 1. Orders: Always merge localStorage orders with server orders so new orders never disappear
-      let serverOrders: Order[] = [];
-      if (ordersRes && ordersRes.ok) {
-        const d = await ordersRes.json();
-        serverOrders = d.orders || [];
-      }
-      const localOrders = safeGetLocal<Order[]>('bk_admin_orders', []);
-      const deletedOrderIds = safeGetLocal<string[]>('bk_deleted_orders', []);
-      const mergedOrders = mergeById(localOrders, serverOrders).filter(
-        (o) => !deletedOrderIds.includes(String(o.id))
-      );
-      setOrders(mergedOrders);
-
-      // 2. Products: Merge local modifications & additions with server products
-      let serverProducts: Product[] = [];
-      if (prodsRes && prodsRes.ok) {
-        const d = await prodsRes.json();
-        serverProducts = d.products || [];
-      }
-      const localProducts = safeGetLocal<Product[]>('bk_admin_products', []);
-      const deletedProductIds = safeGetLocal<string[]>('bk_deleted_products', []);
-      const mergedProducts = mergeById(localProducts, serverProducts).filter(
-        (p) => !deletedProductIds.includes(String(p.id))
-      );
-      setProducts(mergedProducts);
-
-      // 3. Stats: Compute accurate stats using merged orders & products so auto-refresh never wipes new orders
-      let serverStats: Partial<DashboardStats> = {};
-      if (statsRes && statsRes.ok) {
+      if (statsRes.ok) {
         const d = await statsRes.json();
-        serverStats = d.stats || {};
+        setStats(d.stats);
       }
-      const pendingCount = mergedOrders.filter(
-        (o: any) => o.status === 'Nouvelle' || o.status === 'pending' || o.status === 'new'
-      ).length;
-      const lowStock = mergedProducts.filter(
-        (p: any) => typeof p.stock === 'number' && p.stock <= 5
-      ).length;
-
-      setStats({
-        ...(serverStats as DashboardStats),
-        totalOrders: Math.max(mergedOrders.length, serverStats.totalOrders || 0),
-        newPendingOrders: mergedOrders.length > 0 ? pendingCount : (serverStats.newPendingOrders || 0),
-        recentOrders: mergedOrders.length > 0 ? mergedOrders.slice(0, 10) : (serverStats.recentOrders || []),
-        lowStockCount: mergedProducts.length > 0 ? lowStock : (serverStats.lowStockCount || 0),
-      });
-
-      // 4. Categories
-      let serverCats: Category[] = [];
-      if (catsRes && catsRes.ok) {
+      if (ordersRes.ok) {
+        const d = await ordersRes.json();
+        setOrders(d.orders);
+      }
+      if (prodsRes.ok) {
+        const d = await prodsRes.json();
+        setProducts(d.products);
+      }
+      if (catsRes.ok) {
         const d = await catsRes.json();
-        serverCats = d.categories || [];
+        setCategories(d.categories);
       }
-      const localCats = safeGetLocal<Category[]>('bk_admin_categories', []);
-      setCategories(mergeById(localCats, serverCats));
-
-      // 5. Wilayas
-      let serverWilayas: WilayaDeliveryRule[] = [];
-      if (wilayasRes && wilayasRes.ok) {
+      if (wilayasRes.ok) {
         const d = await wilayasRes.json();
-        serverWilayas = d.wilayas || [];
+        setWilayas(d.wilayas);
       }
-      const localWilayas = safeGetLocal<WilayaDeliveryRule[]>('bk_admin_wilayas', []);
-      setWilayas(localWilayas.length > 0 ? mergeById(localWilayas, serverWilayas) : serverWilayas);
-
-      // 6. Settings
-      let serverSettings: StoreSettings | null = null;
-      if (settingsRes && settingsRes.ok) {
+      if (settingsRes.ok) {
         const d = await settingsRes.json();
-        serverSettings = d.settings || null;
+        setSettings(d.settings);
       }
-      const localSettings = safeGetLocal<StoreSettings | null>('bk_admin_settings', null);
-      setSettings(localSettings ? { ...serverSettings, ...localSettings } : serverSettings);
     } catch (e) {
       console.error('Error fetching admin data', e);
-      setOrders(safeGetLocal<Order[]>('bk_admin_orders', []));
-      setProducts(safeGetLocal<Product[]>('bk_admin_products', []));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -179,20 +108,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const normalizedPath =
-    currentPath === '/gestion-privee' ? '/gestion-privee/dashboard' : currentPath;
+  const normalizedPath = currentPath === '/gestion-privee' ? '/gestion-privee/dashboard' : currentPath;
 
-  // Auto-refresh using loadData so localStorage orders are NEVER overwritten by a raw stats call
   useEffect(() => {
     if (normalizedPath !== '/gestion-privee/dashboard') return;
 
-    const intervalId = window.setInterval(loadData, 15_000);
-    window.addEventListener('focus', loadData);
+    const refreshStats = async () => {
+      try {
+        const response = await fetch('/api/admin/dashboard-stats');
+        if (!response.ok) {
+          throw new Error(`Dashboard stats request failed (${response.status})`);
+        }
+        const data = await response.json();
+        setStats(data.stats);
+      } catch (error) {
+        console.error('Error refreshing admin dashboard stats', error);
+      }
+    };
+
+    const intervalId = window.setInterval(refreshStats, 15_000);
+    window.addEventListener('focus', refreshStats);
     return () => {
       window.clearInterval(intervalId);
-      window.removeEventListener('focus', loadData);
+      window.removeEventListener('focus', refreshStats);
     };
-  }, [normalizedPath, loadData]);
+  }, [normalizedPath]);
 
   return (
     <AdminLayout
@@ -281,5 +221,3 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     </AdminLayout>
   );
 };
-
-export default AdminDashboard;
