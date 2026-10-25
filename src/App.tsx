@@ -25,8 +25,10 @@ import { AdminLoggedOut } from './components/Admin/AdminLoggedOut';
 function StorefrontApp() {
   const { language, t, isRtl } = useLanguage();
   const { isCartOpen, setIsCartOpen } = useCart();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-
+const { effectiveAuthenticated, isLoading: isAuthLoading } = useAuth();
+// التحقق المباشر من التخزين المحلي لتجاوز مشاكل الـ Context
+const isLocallyLoggedIn = typeof window !== 'undefined' && localStorage.getItem('bk_admin_logged') === 'true';
+const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
   // Route state
   const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname);
   const privateAdminPath = '/gestion-privee';
@@ -56,15 +58,15 @@ function StorefrontApp() {
       currentPath.startsWith(`${privateAdminPath}/`) &&
       currentPath !== `${privateAdminPath}/logged-out` &&
       currentPath !== `${privateAdminPath}/forbidden`;
-    if (privateSubpage && !isAuthLoading && !isAuthenticated) {
+    if (privateSubpage && !isAuthLoading && !effectiveAuthenticated) {
       navigateTo(privateAdminPath);
       return;
     }
 
-    if (currentPath === privateAdminPath && !isAuthLoading && isAuthenticated) {
+    if (currentPath === privateAdminPath && !isAuthLoading && effectiveAuthenticated) {
       navigateTo(`${privateAdminPath}/dashboard`);
     }
-  }, [currentPath, isAuthenticated, isAuthLoading]);
+  }, [currentPath, effectiveAuthenticated, isAuthLoading]);
 
   // Data state
   const [products, setProducts] = useState<Product[]>([]);
@@ -156,6 +158,14 @@ function StorefrontApp() {
   });
 
   // -------------------------------------------------------------
+  // Data state & Auth check
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const isLocallyLoggedIn = typeof window !== 'undefined' && localStorage.getItem('bk_admin_logged') === 'true';
+  const effectiveAuthenticated = isAuthenticated || isLocallyLoggedIn;
+
+  // ... (باقي الكود كما هو حتى جزء الـ Admin Routes Dispatcher)
+
+  // -------------------------------------------------------------
   // ADMIN ROUTES DISPATCHER
   // -------------------------------------------------------------
   if (currentPath.startsWith('/admin') || currentPath.startsWith(privateAdminPath)) {
@@ -185,14 +195,17 @@ function StorefrontApp() {
       );
     }
 
-    if (isAuthenticated) {
+    if (effectiveAuthenticated) {
       const targetAdminPath =
         currentPath === privateAdminPath ? `${privateAdminPath}/dashboard` : currentPath;
       return (
         <AdminDashboard
           currentPath={targetAdminPath}
           onNavigate={(path) => navigateTo(path)}
-          onLogoutSuccess={() => navigateTo(`${privateAdminPath}/logged-out`)}
+          onLogoutSuccess={() => {
+            localStorage.removeItem('bk_admin_logged');
+            navigateTo(`${privateAdminPath}/logged-out`);
+          }}
           onViewStorefront={() => navigateTo('/')}
         />
       );
