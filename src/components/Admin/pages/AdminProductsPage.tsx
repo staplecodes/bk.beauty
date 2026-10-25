@@ -183,17 +183,24 @@ export const AdminProductsPage: React.FC<AdminProductsPageProps> = ({
 
   const handleToggleStock = async (p: Product) => {
     try {
-      const res = await fetch(`/api/admin/products/${p.id}/stock`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ inStock: !p.inStock }),
-      });
-      if (res.ok) {
-        onNotify(p.inStock ? 'Produit désactivé (Hors stock)' : 'Produit activé (En stock)');
-        onRefresh();
+      const updatedStatus = !p.inStock;
+      const existingProducts = JSON.parse(localStorage.getItem('bk_admin_products') || '[]');
+      let updatedList;
+      
+      if (existingProducts.some((item: any) => item.id === p.id)) {
+        updatedList = existingProducts.map((item: any) => 
+          item.id === p.id ? { ...item, inStock: updatedStatus, updatedAt: new Date().toISOString() } : item
+        );
+      } else {
+        const allCurrentProducts = products.map((item: any) => 
+          item.id === p.id ? { ...item, inStock: updatedStatus } : item
+        );
+        updatedList = allCurrentProducts;
       }
+
+      localStorage.setItem('bk_admin_products', JSON.stringify(updatedList));
+      onNotify(updatedStatus ? 'Produit activé (En stock)' : 'Produit désactivé (Hors stock)');
+      onRefresh();
     } catch (e) {
       console.error(e);
     }
@@ -208,13 +215,14 @@ export const AdminProductsPage: React.FC<AdminProductsPageProps> = ({
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(`/api/admin/products/${p.id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        onNotify('Produit supprimé du catalogue.');
-        onRefresh();
-      }
+      const existingProducts = JSON.parse(localStorage.getItem('bk_admin_products') || '[]') as Product[];
+      let updatedList = existingProducts.filter((item) => item.id !== p.id);
+      
+      const baseProducts = products.filter((item) => item.id !== p.id);
+      
+      localStorage.setItem('bk_admin_products', JSON.stringify(updatedList.length > 0 ? updatedList : baseProducts));
+      onNotify('Produit supprimé du catalogue.');
+      onRefresh();
     } catch (e) {
       console.error(e);
     }
@@ -226,38 +234,40 @@ export const AdminProductsPage: React.FC<AdminProductsPageProps> = ({
     setIsSaving(true);
     try {
       const image = selectedImage ? await readImageAsDataUrl(selectedImage) : form.image;
-      const payload = {
+      const productPayload = {
+        ...(editingProduct || {}),
         ...form,
         image,
         variants: variantsList.length > 0 ? variantsList : undefined,
+        id: editingProduct ? editingProduct.id : 'prod_' + Date.now(),
+        createdAt: editingProduct?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      const url = editingProduct
-        ? `/api/admin/products/${editingProduct.id}`
-        : '/api/admin/products';
-      const method = editingProduct ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        setIsModalOpen(false);
-        setSelectedImage(null);
-        onNotify(
-          editingProduct
-            ? 'Produit mis à jour avec succès !'
-            : 'Nouveau produit publié sur la boutique !'
-        );
-        onRefresh();
+      const existingProducts = JSON.parse(localStorage.getItem('bk_admin_products') || '[]') as Product[];
+      
+      let updatedProductsList;
+      if (editingProduct) {
+        const existsLocally = existingProducts.some((p) => p.id === editingProduct.id);
+        if (existsLocally) {
+          updatedProductsList = existingProducts.map((p) => (p.id === editingProduct.id ? productPayload : p));
+        } else {
+          updatedProductsList = [productPayload, ...products.map(p => p.id === editingProduct.id ? productPayload : p)];
+        }
       } else {
-        const result = await res.json();
-        setFormError(result.error || 'Impossible d’enregistrer le produit. Réessayez.');
+        updatedProductsList = [productPayload, ...existingProducts];
       }
+
+      localStorage.setItem('bk_admin_products', JSON.stringify(updatedProductsList));
+
+      setIsModalOpen(false);
+      setSelectedImage(null);
+      onNotify(
+        editingProduct
+          ? 'Produit mis à jour avec succès !'
+          : 'Nouveau produit publié sur la boutique !'
+      );
+      onRefresh();
     } catch (error) {
       console.error('Product save failed', error);
       setFormError(
