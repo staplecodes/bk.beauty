@@ -213,29 +213,47 @@ const INITIAL_WILAYAS = [
   { code: '47', nameFr: 'Ghardaïa', nameAr: 'غرداية', deliveryFee: 500, estimatedDays: '1-3 jours', active: true },
 ];
 
+// Keep an in-memory reference in case /tmp is slow or unavailable
+let memoryDb: any = null;
+
 function getDb() {
   try {
     if (fs.existsSync(TMP_DB_FILE)) {
-      return JSON.parse(fs.readFileSync(TMP_DB_FILE, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(TMP_DB_FILE, 'utf-8'));
+      memoryDb = data;
+      return data;
     }
+    if (memoryDb) return memoryDb;
+
     const repoDbPath = path.resolve(process.cwd(), 'data', 'bkbeauty_db.json');
     if (fs.existsSync(repoDbPath)) {
       const parsed = JSON.parse(fs.readFileSync(repoDbPath, 'utf-8'));
-      if (parsed.products && parsed.products.length > 0) return parsed;
+      if (!parsed.products || parsed.products.length === 0) parsed.products = INITIAL_PRODUCTS;
+      if (!parsed.categories || parsed.categories.length === 0) parsed.categories = INITIAL_CATEGORIES;
+      if (!parsed.wilayas || parsed.wilayas.length === 0) parsed.wilayas = INITIAL_WILAYAS;
+      if (!parsed.settings) parsed.settings = INITIAL_SETTINGS;
+      if (!parsed.orders) parsed.orders = [];
+      memoryDb = parsed;
+      saveDb(parsed);
+      return parsed;
     }
   } catch (err) {
     console.warn('Fallback to initial DB:', err);
   }
-  return {
-    categories: INITIAL_CATEGORIES,
-    products: INITIAL_PRODUCTS,
+  const initial = {
+    categories: [...INITIAL_CATEGORIES],
+    products: [...INITIAL_PRODUCTS],
     orders: [],
-    wilayas: INITIAL_WILAYAS,
-    settings: INITIAL_SETTINGS,
+    wilayas: [...INITIAL_WILAYAS],
+    settings: { ...INITIAL_SETTINGS },
   };
+  memoryDb = initial;
+  saveDb(initial);
+  return initial;
 }
 
 function saveDb(db: any) {
+  memoryDb = db;
   try {
     fs.writeFileSync(TMP_DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
   } catch (err) {
@@ -243,10 +261,50 @@ function saveDb(db: any) {
   }
 }
 
+function computeStats(db: any) {
+  const orders = db.orders || [];
+  const products = db.products || [];
+  const threshold = db.settings?.lowStockThreshold || 10;
+
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todayOrders = orders.filter((o: any) => new Date(o.createdAt).getTime() >= todayMidnight);
+
+  const isCancelledOrder = (status: string) =>
+    ['annulee', 'annule', 'cancelled', 'canceled', 'cancel'].includes(
+      (status || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+    );
+  const activeOrders = orders.filter((o: any) => !isCancelledOrder(o.status));
+  const activeOrderValue = activeOrders.reduce((sum: number, o: any) => sum + (Number(o.finalTotal) || 0), 0);
+  const collectedRevenue = orders
+    .filter((o: any) => o.status === 'Livrée')
+    .reduce((sum: number, o: any) => sum + (Number(o.finalTotal) || 0), 0);
+  const lowStockProds = products.filter((p: any) => Number(p.stockQuantity) <= threshold);
+
+  return {
+    totalOrders: activeOrders.length,
+    newPendingOrders: orders.filter((o: any) => o.status === 'Nouvelle').length,
+    confirmedOrders: orders.filter((o: any) => o.status === 'Confirmée').length,
+    preparingOrders: orders.filter((o: any) => o.status === 'En préparation').length,
+    deliveringOrders: orders.filter((o: any) => o.status === 'En cours de livraison').length,
+    deliveredOrders: orders.filter((o: any) => o.status === 'Livrée').length,
+    cancelledOrders: orders.filter((o: any) => isCancelledOrder(o.status)).length,
+    todayOrdersCount: todayOrders.length,
+    todayCodCount: todayOrders.length,
+    todayPrepaidCount: 0,
+    activeOrderValue,
+    collectedRevenue,
+    lowStockCount: lowStockProds.length,
+    criticalLowProducts: lowStockProds.slice(0, 5),
+    recentOrders: orders.slice(0, 10),
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -256,8 +314,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const db = getDb();
     const url = (req.url || '').split('?')[0];
 
-    // --- 0. ADMIN LOGIN ---
-    if (req.method === 'POST' && (url.endsWith('/api/admin/login') || url.includes('admin/login'))) {
+    // --- 0. ADMIN LOGIN & LOGOUT & ME ---
+    if (req.method === 'POST' && url.includes('/admin/login')) {
       const { email, password } = req.body || {};
       const username = (email || '').trim().toLowerCase();
       const pass = (password || '').trim();
@@ -265,77 +323,263 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if ((username === 'admin@bkbeauty.dz' || username === 'admin') && pass === 'admin12345678') {
         return res.status(200).json({
           success: true,
-          user: { 
-            id: 'admin_1', 
-            email: 'admin@bkbeauty.dz', 
-            name: 'BK Beauty Admin', 
-            role: 'admin' 
-          }
+          user: { id: 'admin_1', email: 'admin@bkbeauty.dz', name: 'BK Beauty Admin', role: 'admin' },
         });
       }
       return res.status(401).json({ error: 'Identifiants invalides.' });
     }
 
-    // --- ADMIN ME ---
-    if (req.method === 'GET' && (url.endsWith('/api/admin/me') || url.includes('admin/me'))) {
+    if (req.method === 'POST' && url.includes('/admin/logout')) {
+      return res.status(200).json({ success: true });
+    }
+
+    if (req.method === 'GET' && url.includes('/admin/me')) {
       return res.status(200).json({
-        user: { 
-          id: 'admin_1', 
-          email: 'admin@bkbeauty.dz', 
-          name: 'BK Beauty Admin', 
-          role: 'admin' 
-        }
+        user: { id: 'admin_1', email: 'admin@bkbeauty.dz', name: 'BK Beauty Admin', role: 'admin' },
       });
     }
 
-    // --- ADMIN DASHBOARD STATS ---
+    // --- 1. ADMIN DASHBOARD STATS ---
     if (req.method === 'GET' && url.endsWith('/api/admin/dashboard-stats')) {
-      const orders = db.orders || [];
-      return res.status(200).json({
-        stats: {
-          totalOrders: orders.length,
-          newPendingOrders: orders.filter((o: any) => o.status === 'Nouvelle').length,
-          confirmedOrders: orders.filter((o: any) => o.status === 'Confirmée').length,
-          deliveredOrders: orders.filter((o: any) => o.status === 'Livrée').length,
-          recentOrders: orders.slice(0, 10),
-        }
-      });
+      return res.status(200).json({ stats: computeStats(db) });
     }
 
-    // --- ADMIN ORDERS ---
+    // --- 2. ADMIN ORDERS (GET & PATCH STATUS) ---
     if (req.method === 'GET' && url.endsWith('/api/admin/orders')) {
-      return res.status(200).json({ orders: db.orders || [] });
+      const { status, search } = req.query;
+      let list = [...(db.orders || [])];
+      if (status && status !== 'all') {
+        list = list.filter((o: any) => o.status === status);
+      }
+      if (search && typeof search === 'string') {
+        const q = search.toLowerCase().trim();
+        list = list.filter(
+          (o: any) =>
+            o.reference?.toLowerCase().includes(q) ||
+            o.customer?.fullName?.toLowerCase().includes(q) ||
+            o.customer?.phone?.includes(q) ||
+            o.customer?.commune?.toLowerCase().includes(q) ||
+            o.customer?.wilayaNameFr?.toLowerCase().includes(q)
+        );
+      }
+      return res.status(200).json({ orders: list });
     }
 
-    // --- ADMIN PRODUCTS (POST / PUT / DELETE - ADD & MODIFY) ---
-    if ((req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') && (url.includes('/api/admin/products') || url.includes('admin/products'))) {
-      if (req.method === 'POST' || req.method === 'PUT') {
-        const item = req.body;
-        if (!item.id) {
-          item.id = 'prod_' + Date.now();
-        }
-        item.updatedAt = new Date().toISOString();
-        if (!item.createdAt) item.createdAt = item.updatedAt;
+    const orderStatusMatch = url.match(/\/api\/admin\/orders\/([^/]+)\/status$/);
+    if ((req.method === 'PATCH' || req.method === 'PUT' || req.method === 'POST') && orderStatusMatch) {
+      const orderId = decodeURIComponent(orderStatusMatch[1]);
+      const { status, adminNote, orderPayload } = req.body || {};
+      if (!status) return res.status(400).json({ error: 'Nouveau statut obligatoire.' });
 
-        const index = (db.products || []).findIndex((p: any) => p.id === item.id);
-        if (index >= 0) {
-          db.products[index] = { ...db.products[index], ...item };
-        } else {
-          if (!db.products) db.products = [];
-          db.products.push(item);
-        }
-        saveDb(db);
-        return res.status(200).json({ success: true, product: item, products: db.products });
+      if (!db.orders) db.orders = [];
+      let order = db.orders.find((o: any) => o.id === orderId || o.reference === orderId);
+
+      // If order was only in client localStorage because Vercel spun up a fresh instance, upsert it!
+      if (!order && orderPayload) {
+        order = { ...orderPayload, statusHistory: orderPayload.statusHistory || [] };
+        db.orders.unshift(order);
       }
+
+      if (!order) {
+        return res.status(404).json({ error: 'Commande introuvable.' });
+      }
+
+      const previousStatus = order.status;
+      order.status = status;
+      order.updatedAt = new Date().toISOString();
+      if (adminNote) order.adminNotes = adminNote;
+      if (!Array.isArray(order.statusHistory)) order.statusHistory = [];
+      order.statusHistory.push({
+        status,
+        timestamp: order.updatedAt,
+        note: adminNote || `Statut passé de ${previousStatus} à ${status}`,
+      });
+
+      saveDb(db);
+      return res.status(200).json({ success: true, order });
+    }
+
+    // --- 3. ADMIN PRODUCTS (POST / PUT / PATCH STOCK / DELETE) ---
+    const productStockMatch = url.match(/\/api\/admin\/products\/([^/]+)\/stock$/);
+    if (req.method === 'PATCH' && productStockMatch) {
+      const prodId = decodeURIComponent(productStockMatch[1]);
+      const { inStock, stockQuantity } = req.body || {};
+      const idx = (db.products || []).findIndex((p: any) => p.id === prodId);
+      if (idx === -1) return res.status(404).json({ error: 'Produit introuvable.' });
+
+      const prod = db.products[idx];
+      const newStock = stockQuantity !== undefined ? Number(stockQuantity) : inStock ? Math.max(Number(prod.stockQuantity) || 0, 10) : 0;
+      db.products[idx] = {
+        ...prod,
+        inStock: Boolean(inStock),
+        stockQuantity: newStock,
+        updatedAt: new Date().toISOString(),
+      };
+      saveDb(db);
+      return res.status(200).json({ success: true, product: db.products[idx] });
+    }
+
+    const adminProductIdMatch = url.match(/\/api\/admin\/products\/([^/]+)$/);
+    if (adminProductIdMatch && (req.method === 'PUT' || req.method === 'DELETE')) {
+      const prodId = decodeURIComponent(adminProductIdMatch[1]);
+      if (!db.products) db.products = [];
+
+      if (req.method === 'PUT') {
+        const updates = req.body || {};
+        const idx = db.products.findIndex((p: any) => p.id === prodId);
+        const stockQty = updates.stockQuantity !== undefined ? Number(updates.stockQuantity) : idx >= 0 ? db.products[idx].stockQuantity : 10;
+        if (idx >= 0) {
+          db.products[idx] = {
+            ...db.products[idx],
+            ...updates,
+            id: prodId,
+            price: updates.price !== undefined ? Number(updates.price) : db.products[idx].price,
+            stockQuantity: stockQty,
+            inStock: updates.inStock !== undefined ? Boolean(updates.inStock) : stockQty > 0,
+            updatedAt: new Date().toISOString(),
+          };
+          saveDb(db);
+          return res.status(200).json({ success: true, product: db.products[idx], products: db.products });
+        } else {
+          const newProd = {
+            ...updates,
+            id: prodId,
+            price: Number(updates.price) || 0,
+            stockQuantity: stockQty,
+            inStock: stockQty > 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          db.products.unshift(newProd);
+          saveDb(db);
+          return res.status(200).json({ success: true, product: newProd, products: db.products });
+        }
+      }
+
       if (req.method === 'DELETE') {
-        const { id } = req.body || {};
-        db.products = (db.products || []).filter((p: any) => p.id !== id);
+        db.products = db.products.filter((p: any) => p.id !== prodId);
         saveDb(db);
         return res.status(200).json({ success: true, products: db.products });
       }
     }
 
-    // 1. GET /api/public/products/:id
+    if (url.endsWith('/api/admin/products') && (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE')) {
+      if (!db.products) db.products = [];
+      if (req.method === 'DELETE') {
+        const { id } = req.body || {};
+        db.products = db.products.filter((p: any) => p.id !== id);
+        saveDb(db);
+        return res.status(200).json({ success: true, products: db.products });
+      }
+
+      const item = req.body || {};
+      const id = item.id || `prod_${Date.now()}`;
+      const stockQty = item.stockQuantity !== undefined ? Number(item.stockQuantity) : 10;
+      const nowIso = new Date().toISOString();
+      const productObj = {
+        ...item,
+        id,
+        sku: item.sku || `BK-${Math.floor(100000 + Math.random() * 900000)}`,
+        price: Number(item.price) || 0,
+        originalPrice: item.originalPrice ? Number(item.originalPrice) : undefined,
+        stockQuantity: stockQty,
+        inStock: item.inStock !== undefined ? Boolean(item.inStock) : stockQty > 0,
+        image: item.image || '/no-product-image.svg',
+        updatedAt: nowIso,
+        createdAt: item.createdAt || nowIso,
+      };
+
+      const index = db.products.findIndex((p: any) => p.id === id);
+      if (index >= 0) {
+        db.products[index] = { ...db.products[index], ...productObj };
+      } else {
+        db.products.unshift(productObj);
+      }
+      saveDb(db);
+      return res.status(201).json({ success: true, product: productObj, products: db.products });
+    }
+
+    // --- 4. ADMIN INVENTORY STOCK ADJUSTMENT ---
+    const inventoryStockMatch = url.match(/\/api\/admin\/inventory\/([^/]+)\/stock$/);
+    if (req.method === 'PATCH' && inventoryStockMatch) {
+      const prodId = decodeURIComponent(inventoryStockMatch[1]);
+      const { stockQuantity, variantId } = req.body || {};
+      const product = (db.products || []).find((p: any) => p.id === prodId);
+      if (!product) return res.status(404).json({ error: 'Produit introuvable.' });
+
+      if (variantId && Array.isArray(product.variants)) {
+        const v = product.variants.find((item: any) => item.id === variantId);
+        if (v) {
+          v.stockQuantity = Math.max(0, Number(stockQuantity) || 0);
+          v.inStock = v.stockQuantity > 0;
+          product.stockQuantity = product.variants.reduce((sum: number, item: any) => sum + (Number(item.stockQuantity) || 0), 0);
+          product.inStock = product.stockQuantity > 0;
+        }
+      } else {
+        product.stockQuantity = Math.max(0, Number(stockQuantity) || 0);
+        product.inStock = product.stockQuantity > 0;
+      }
+      product.updatedAt = new Date().toISOString();
+      saveDb(db);
+      return res.status(200).json({ success: true, product });
+    }
+
+    // --- 5. ADMIN CATEGORIES CRUD ---
+    const adminCatIdMatch = url.match(/\/api\/admin\/categories\/([^/]+)$/);
+    if (adminCatIdMatch && (req.method === 'PUT' || req.method === 'DELETE')) {
+      const catId = decodeURIComponent(adminCatIdMatch[1]);
+      if (!db.categories) db.categories = [...INITIAL_CATEGORIES];
+
+      if (req.method === 'PUT') {
+        const idx = db.categories.findIndex((c: any) => c.id === catId);
+        if (idx === -1) return res.status(404).json({ error: 'Catégorie introuvable.' });
+        db.categories[idx] = { ...db.categories[idx], ...req.body, id: catId };
+        saveDb(db);
+        return res.status(200).json({ success: true, category: db.categories[idx] });
+      }
+      if (req.method === 'DELETE') {
+        db.categories = db.categories.filter((c: any) => c.id !== catId);
+        saveDb(db);
+        return res.status(200).json({ success: true });
+      }
+    }
+
+    if (url.endsWith('/api/admin/categories') && req.method === 'POST') {
+      const { nameFr, nameAr, descriptionFr, descriptionAr, slug, icon } = req.body || {};
+      if (!db.categories) db.categories = [...INITIAL_CATEGORIES];
+      const newCat = {
+        id: `cat_${Date.now()}`,
+        nameFr: nameFr || '',
+        nameAr: nameAr || '',
+        descriptionFr: descriptionFr || '',
+        descriptionAr: descriptionAr || '',
+        slug: slug || (nameFr || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        icon: icon || 'category',
+      };
+      db.categories.push(newCat);
+      saveDb(db);
+      return res.status(201).json({ success: true, category: newCat });
+    }
+
+    // --- 6. ADMIN SETTINGS & WILAYAS ---
+    if (url.endsWith('/api/admin/settings') && (req.method === 'PUT' || req.method === 'POST')) {
+      db.settings = { ...(db.settings || INITIAL_SETTINGS), ...(req.body || {}) };
+      saveDb(db);
+      return res.status(200).json({ success: true, settings: db.settings });
+    }
+
+    const adminWilayaMatch = url.match(/\/api\/admin\/wilayas\/([^/]+)$/);
+    if (adminWilayaMatch && (req.method === 'PUT' || req.method === 'PATCH')) {
+      const code = decodeURIComponent(adminWilayaMatch[1]);
+      if (!db.wilayas) db.wilayas = [...INITIAL_WILAYAS];
+      const idx = db.wilayas.findIndex((w: any) => w.code === code);
+      if (idx === -1) return res.status(404).json({ error: 'Wilaya introuvable.' });
+      db.wilayas[idx] = { ...db.wilayas[idx], ...(req.body || {}), code };
+      saveDb(db);
+      return res.status(200).json({ success: true, wilaya: db.wilayas[idx] });
+    }
+
+    // --- PUBLIC ENDPOINTS ---
     const singleProductMatch = url.match(/\/api\/public\/products\/([^/]+)$/);
     if (req.method === 'GET' && singleProductMatch) {
       const product = (db.products || INITIAL_PRODUCTS).find((p: any) => p.id === singleProductMatch[1]);
@@ -343,7 +587,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ product });
     }
 
-    // 2. GET /api/public/products
     if (req.method === 'GET' && url.endsWith('/api/public/products')) {
       const { category, search, inStockOnly, featured } = req.query;
       let prods = [...(db.products || INITIAL_PRODUCTS)];
@@ -363,7 +606,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ products: prods });
     }
 
-    // 3. GET /api/public/categories
     if (req.method === 'GET' && url.endsWith('/api/public/categories')) {
       const categories = (db.categories || INITIAL_CATEGORIES).map((cat: any) => ({
         ...cat,
@@ -372,17 +614,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ categories });
     }
 
-    // 4. GET /api/public/wilayas
     if (req.method === 'GET' && url.endsWith('/api/public/wilayas')) {
       return res.status(200).json({ wilayas: db.wilayas || INITIAL_WILAYAS });
     }
 
-    // 5. GET /api/public/settings
     if (req.method === 'GET' && url.endsWith('/api/public/settings')) {
       return res.status(200).json({ settings: db.settings || INITIAL_SETTINGS });
     }
 
-    // 6. POST /api/public/orders
     if (req.method === 'POST' && url.endsWith('/api/public/orders')) {
       const { customer, items } = req.body || {};
       if (!customer || !items || !Array.isArray(items) || items.length === 0) {
@@ -392,21 +631,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let subtotal = 0;
       const verifiedItems = items.map((item: any) => {
         const prod = (db.products || INITIAL_PRODUCTS).find((p: any) => p.id === item.productId) || INITIAL_PRODUCTS[0];
-        const lineTotal = prod.price * (item.quantity || 1);
+        const qty = Number(item.quantity) || 1;
+        const lineTotal = prod.price * qty;
         subtotal += lineTotal;
         return {
           productId: prod.id,
           productNameFr: prod.nameFr,
           productNameAr: prod.nameAr,
           sku: prod.sku,
+          variantId: item.variantId,
           unitPrice: prod.price,
-          quantity: item.quantity || 1,
+          quantity: qty,
           lineTotal,
           image: prod.image,
         };
       });
       const deliveryFee = subtotal >= (db.settings?.freeDeliveryThreshold || 12000) ? 0 : wilaya.deliveryFee;
       const orderRef = `BK-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const nowIso = new Date().toISOString();
       const newOrder = {
         id: `ord_${Date.now()}`,
         reference: orderRef,
@@ -421,14 +663,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         finalTotal: subtotal + deliveryFee,
         paymentMethod: 'cash_on_delivery',
         status: 'Nouvelle',
-        createdAt: new Date().toISOString(),
+        statusHistory: [
+          {
+            status: 'Nouvelle',
+            timestamp: nowIso,
+            note: 'Commande enregistrée via la boutique en ligne (Paiement à la livraison)',
+          },
+        ],
+        createdAt: nowIso,
+        updatedAt: nowIso,
       };
       db.orders = [newOrder, ...(db.orders || [])];
       saveDb(db);
       return res.status(201).json({ success: true, order: newOrder });
     }
 
-    // 7. GET /api/public/orders/:reference
     const trackOrderMatch = url.match(/\/api\/public\/orders\/([^/]+)$/);
     if (req.method === 'GET' && trackOrderMatch) {
       const order = (db.orders || []).find(

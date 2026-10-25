@@ -216,45 +216,7 @@ const INITIAL_SETTINGS: StoreSettings = {
   isStoreOpen: true,
 };
 
-class PersistentStorage {
-  private db: DatabaseSchema | null = null;
 
-  constructor() {
-    this.ensureInitialized();
-  }
-
-  private ensureInitialized(): void {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-
-    if (!fs.existsSync(DB_FILE)) {
-      const initialData: DatabaseSchema = {
-        adminUsers: [],
-        adminPasswordHash: '',
-        adminSessions: [],
-        categories: INITIAL_CATEGORIES,
-        products: INITIAL_PRODUCTS,
-        orders: [],
-        wilayas: INITIAL_WILAYAS,
-        settings: INITIAL_SETTINGS,
-        version: 1,
-      };
-
-      fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
-      this.db = initialData;
-    } else {
-      try {
-        const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
-        const loadedData: DatabaseSchema = JSON.parse(fileContent);
-        loadedData.adminSessions ||= [];
-        this.db = loadedData;
-      } catch (e) {
-        console.error('Error reading database file, reinitializing', e);
-        this.ensureInitialized();
-      }
-    }
-  }
 
 const TMP_DB_FILE = '/tmp/bkbeauty_db.json';
 
@@ -266,6 +228,18 @@ class PersistentStorage {
   }
 
   private ensureInitialized(): void {
+    // Always re-read /tmp on Vercel so orders & edits stay synced across requests
+    if (process.env.VERCEL && fs.existsSync(TMP_DB_FILE)) {
+      try {
+        const content = fs.readFileSync(TMP_DB_FILE, 'utf-8');
+        this.db = JSON.parse(content);
+        this.db!.adminSessions ||= [];
+        return;
+      } catch (e) {
+        console.error('Error reading TMP_DB_FILE:', e);
+      }
+    }
+
     if (this.db) return;
 
     const initialData: DatabaseSchema = {

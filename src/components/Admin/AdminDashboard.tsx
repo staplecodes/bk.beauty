@@ -52,43 +52,68 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const loadData = async () => {
     setIsLoading(true);
     try {
-
       const [statsRes, ordersRes, prodsRes, catsRes, wilayasRes, settingsRes] =
         await Promise.all([
-          fetch('/api/admin/dashboard-stats'),
-          fetch('/api/admin/orders'),
-          fetch('/api/public/products'),
-          fetch('/api/public/categories'),
-          fetch('/api/public/wilayas'),
-          fetch('/api/public/settings'),
+          fetch('/api/admin/dashboard-stats').catch(() => null),
+          fetch('/api/admin/orders').catch(() => null),
+          fetch('/api/public/products').catch(() => null),
+          fetch('/api/public/categories').catch(() => null),
+          fetch('/api/public/wilayas').catch(() => null),
+          fetch('/api/public/settings').catch(() => null),
         ]);
 
-      if (statsRes.ok) {
+      if (statsRes && statsRes.ok) {
         const d = await statsRes.json();
         setStats(d.stats);
       }
-      if (ordersRes.ok) {
+
+      // --- ORDERS (Merged safely with localStorage so they never disappear) ---
+      let serverOrders: Order[] = [];
+      if (ordersRes && ordersRes.ok) {
         const d = await ordersRes.json();
-        setOrders(d.orders);
+        serverOrders = d.orders || [];
       }
-      if (prodsRes.ok) {
+      const localOrders: Order[] = JSON.parse(localStorage.getItem('bk_admin_orders') || '[]');
+      const orderMap = new Map<string, Order>();
+      for (const o of [...localOrders, ...serverOrders]) {
+        if (o && o.id) orderMap.set(o.id, o);
+      }
+      const mergedOrders = Array.from(orderMap.values()).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      localStorage.setItem('bk_admin_orders', JSON.stringify(mergedOrders));
+      setOrders(mergedOrders);
+
+      // --- PRODUCTS ---
+      let serverProducts: Product[] = [];
+      if (prodsRes && prodsRes.ok) {
         const d = await prodsRes.json();
-        setProducts(d.products);
+        serverProducts = d.products || [];
       }
-      if (catsRes.ok) {
+      const localProducts: Product[] = JSON.parse(localStorage.getItem('bk_admin_products') || '[]');
+      const prodMap = new Map<string, Product>();
+      for (const p of [...localProducts, ...serverProducts]) {
+        if (p && p.id) prodMap.set(p.id, p);
+      }
+      const mergedProducts = Array.from(prodMap.values());
+      setProducts(mergedProducts.length > 0 ? mergedProducts : serverProducts);
+
+      if (catsRes && catsRes.ok) {
         const d = await catsRes.json();
-        setCategories(d.categories);
+        setCategories(d.categories || []);
       }
-      if (wilayasRes.ok) {
+      if (wilayasRes && wilayasRes.ok) {
         const d = await wilayasRes.json();
-        setWilayas(d.wilayas);
+        setWilayas(d.wilayas || []);
       }
-      if (settingsRes.ok) {
+      if (settingsRes && settingsRes.ok) {
         const d = await settingsRes.json();
-        setSettings(d.settings);
+        setSettings(d.settings || null);
       }
     } catch (e) {
       console.error('Error fetching admin data', e);
+      setOrders(JSON.parse(localStorage.getItem('bk_admin_orders') || '[]'));
+      setProducts(JSON.parse(localStorage.getItem('bk_admin_products') || '[]'));
     } finally {
       setIsLoading(false);
     }
@@ -113,24 +138,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     if (normalizedPath !== '/gestion-privee/dashboard') return;
 
-    const refreshStats = async () => {
-      try {
-        const response = await fetch('/api/admin/dashboard-stats');
-        if (!response.ok) {
-          throw new Error(`Dashboard stats request failed (${response.status})`);
-        }
-        const data = await response.json();
-        setStats(data.stats);
-      } catch (error) {
-        console.error('Error refreshing admin dashboard stats', error);
-      }
-    };
-
-    const intervalId = window.setInterval(refreshStats, 15_000);
-    window.addEventListener('focus', refreshStats);
+    const intervalId = window.setInterval(loadData, 15_000);
+    window.addEventListener('focus', loadData);
     return () => {
       window.clearInterval(intervalId);
-      window.removeEventListener('focus', refreshStats);
+      window.removeEventListener('focus', loadData);
     };
   }, [normalizedPath]);
 
@@ -140,7 +152,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       onNavigate={onNavigate}
       onLogout={handleLogout}
       onViewStorefront={onViewStorefront}
-      pendingOrdersCount={stats?.newPendingOrders || 0}
+      pendingOrdersCount={stats?.newPendingOrders || orders.filter(o => o.status === 'Nouvelle').length}
       lowStockCount={stats?.lowStockCount || 0}
     >
       {/* Toast Notification */}
@@ -151,7 +163,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {isLoading && !stats ? (
+      {isLoading && !stats && orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 space-y-3">
           <div className="w-8 h-8 border-2 border-[#642C40] border-t-transparent rounded-full animate-spin" />
           <p className="text-xs text-[#292526]/60 font-medium">
@@ -221,3 +233,5 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     </AdminLayout>
   );
 };
+
+export default AdminDashboard;

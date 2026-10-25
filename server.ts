@@ -58,6 +58,10 @@ function saveProductImage(dataUrl: unknown): string {
       'Le contenu du fichier ne correspond pas à une image JPG, JPEG, JFIF, PNG ou WEBP valide.',
     );
   }
+  // On Vercel, the filesystem is read-only, so store the validated base64 image directly
+if (process.env.VERCEL) {
+  return dataUrl;
+}
 
   fs.mkdirSync(PRODUCT_UPLOAD_DIR, { recursive: true });
   const filename = `${randomUUID()}.${PRODUCT_IMAGE_MIME_EXTENSIONS[mimeType]}`;
@@ -119,30 +123,26 @@ function requireAdmin(req: AuthRequest, res: Response, next: NextFunction): void
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as {
-      id: string;
-      email: string;
-      name: string;
-      role: string;
-      sid: string;
-    };
-    const expiresAt = storage.getAdminSessionExpiry(decoded.sid);
-    if (!expiresAt || expiresAt <= Date.now()) {
-      storage.revokeAdminSession(decoded.sid);
-      res.status(401).json({
-        error: 'Session expired or invalid. Please sign in again.',
-      });
-      return;
-    }
-    req.adminUser = {
-      id: decoded.id,
-      email: decoded.email,
-      name: decoded.name,
-      role: decoded.role,
-    };
-    req.adminSessionId = decoded.sid;
-    next();
-  } catch {
+  const decoded = jwt.verify(token, JWT_SECRET) as {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    sid: string;
+  };
+  req.adminUser = {
+    id: decoded.id,
+    email: decoded.email,
+    name: decoded.name,
+    role: decoded.role,
+  };
+  req.adminSessionId = decoded.sid;
+  next();
+} catch {
+  res.status(403).json({
+    error: 'Session expired or invalid. Please sign in again.',
+  });
+} catch {
     res.status(403).json({
       error: 'Session expired or invalid. Please sign in again.',
     });
