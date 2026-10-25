@@ -375,12 +375,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: err?.message || 'Server error' });
   }
   // --- POST /api/admin/login ---
-    if (req.method === 'POST' && (url.endsWith('/api/admin/login') || url.includes('admin/login'))) {
+    if (req.method === 'POST') {
       const { email, password } = req.body || {};
-      const username = email?.trim().toLowerCase();
-      
-      if ((username === 'admin@bkbeauty.dz' || username === 'admin') && password === 'admin12345678') {
-        res.setHeader('Set-Cookie', 'bk_admin_session=active_session_token; Path=/; HttpOnly; SameSite=Lax');
+      const username = (email || '').trim().toLowerCase();
+      const pass = (password || '').trim();
+
+      if ((username === 'admin@bkbeauty.dz' || username === 'admin') && pass === 'admin12345678') {
         return res.status(200).json({
           success: true,
           user: { 
@@ -391,7 +391,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         });
       }
-      return res.status(401).json({ error: 'Identifiant ou mot de passe incorrect.' });
+      return res.status(401).json({ error: 'Identifiants invalides.' });
     }
     // --- GET /api/admin/me ---
     if (req.method === 'GET' && (url.endsWith('/api/admin/me') || url.includes('admin/me'))) {
