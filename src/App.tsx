@@ -25,10 +25,12 @@ import { AdminLoggedOut } from './components/Admin/AdminLoggedOut';
 function StorefrontApp() {
   const { language, t, isRtl } = useLanguage();
   const { isCartOpen, setIsCartOpen } = useCart();
-const { effectiveAuthenticated, isLoading: isAuthLoading } = useAuth();
-// التحقق المباشر من التخزين المحلي لتجاوز مشاكل الـ Context
-const isLocallyLoggedIn = typeof window !== 'undefined' && localStorage.getItem('bk_admin_logged') === 'true';
-const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  
+  // Local storage auth fallback to avoid redirection lockups
+  const isLocallyLoggedIn = typeof window !== 'undefined' && localStorage.getItem('bk_admin_logged') === 'true';
+  const effectiveAuthenticated = isAuthenticated || isLocallyLoggedIn;
+
   // Route state
   const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname);
   const privateAdminPath = '/gestion-privee';
@@ -153,17 +155,8 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
       const nameB = language === 'ar' ? b.nameAr : b.nameFr;
       return nameA.localeCompare(nameB);
     }
-    // Default newest
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
-
-  // -------------------------------------------------------------
-  // Data state & Auth check
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const isLocallyLoggedIn = typeof window !== 'undefined' && localStorage.getItem('bk_admin_logged') === 'true';
-  const effectiveAuthenticated = isAuthenticated || isLocallyLoggedIn;
-
-  // ... (باقي الكود كما هو حتى جزء الـ Admin Routes Dispatcher)
 
   // -------------------------------------------------------------
   // ADMIN ROUTES DISPATCHER
@@ -224,7 +217,6 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
   // -------------------------------------------------------------
   return (
     <div className={`min-h-screen bg-[#FAF7F2] text-[#292526] selection:bg-[#E8C9CD] selection:text-[#642C40] ${isRtl ? 'font-arabic' : ''}`}>
-      {/* Header */}
       <Header
         settings={settings}
         activeSection={activeSection}
@@ -234,7 +226,6 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
         onOpenCart={() => setIsCartOpen(true)}
       />
 
-      {/* Hero Section */}
       <Hero
         onShopClick={() => {
           const el = document.getElementById('catalog');
@@ -246,9 +237,7 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
         }}
       />
 
-      {/* Main Catalog Section */}
       <section id="catalog" className="w-full py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-start">
-        {/* Section Heading & Category Nav */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
             <span className="text-xs uppercase tracking-widest text-[#C5A46D] font-bold">
@@ -264,7 +253,6 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
           </span>
         </div>
 
-        {/* 6 Category Filter Tabs */}
         <div className="mb-6">
           <CategoryNav
             categories={categories}
@@ -273,10 +261,8 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
           />
         </div>
 
-        {/* Filters & Sorting Bar */}
         <div className="bg-[#FFFFFF] p-4 rounded-xl border border-[#E8C9CD]/60 mb-8 flex flex-wrap items-center justify-between gap-4 text-xs shadow-2xs">
           <div className="flex flex-wrap items-center gap-4">
-            {/* Sort Dropdown */}
             <div className="flex items-center gap-2">
               <span className="text-[#292526]/60 font-medium">{t.catalog.sortBy} :</span>
               <select
@@ -291,7 +277,6 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
               </select>
             </div>
 
-            {/* In stock only toggle */}
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -305,7 +290,6 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
             </label>
           </div>
 
-          {/* Price Range Slider */}
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <span className="text-[#292526]/60 whitespace-nowrap">
               Max : <strong className="font-tabular text-[#642C40]">{maxPriceFilter.toLocaleString()} {t.currency}</strong>
@@ -322,7 +306,6 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
           </div>
         </div>
 
-        {/* Products Grid */}
         {isLoadingProducts ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
@@ -366,19 +349,11 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
         )}
       </section>
 
-      {/* Cash on Delivery (COD) Assurance Spotlight */}
       <CodExplainer />
-
-      {/* Atelier Craft & Brand Story Section */}
       <AtelierStory />
-
-      {/* Instagram Community Section */}
       <InstagramSection />
-
-      {/* Customer Hotline & WhatsApp Concierge */}
       <ConciergeSection />
 
-      {/* Footer */}
       <Footer
         onOpenPolicy={(policy) => setActivePolicy(policy)}
         onSelectCategory={(catId) => {
@@ -388,33 +363,28 @@ const effectiveAuthenticated = effectiveAuthenticated || isLocallyLoggedIn;
         }}
       />
 
-      {/* Product Detail Modal */}
       <ProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
       />
 
-      {/* Shopping Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         onProceedToCheckout={() => setIsCheckoutOpen(true)}
       />
 
-      {/* Checkout Modal */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         onOrderSuccess={(order) => setCompletedOrder(order)}
       />
 
-      {/* Order Confirmation Modal */}
       <OrderConfirmationModal
         order={completedOrder}
         onClose={() => setCompletedOrder(null)}
       />
 
-      {/* Policy Modals */}
       <PolicyModals
         policyKey={activePolicy}
         onClose={() => setActivePolicy(null)}
